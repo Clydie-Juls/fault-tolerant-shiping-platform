@@ -1,0 +1,17 @@
+FROM golang:1.24-alpine AS builder 
+WORKDIR /app
+COPY go.mod go.sum .
+RUN go mod download
+COPY producer ./producer
+COPY utils ./utils
+RUN go build -ldflags="-s -w" -o myapp ./producer/direct_log.go
+
+FROM alpine
+RUN apk update --no-cache && apk add --no-cache ca-certificates tzdata
+WORKDIR /app
+ARG ROUTING_KEY="#"
+ENV AMQP_URL=amqp://guest:guest@rbmq:5672/
+COPY --from=builder /app/myapp /app/myapp
+EXPOSE 8080
+CMD ["./myapp", "${ROUTING_KEY}"]
+

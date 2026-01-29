@@ -1,0 +1,4 @@
+rabbitmq.conf
+rabbitmq_pass.txt
+rabbitmq_user.txt
+.env.*
