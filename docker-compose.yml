@@ -1,5 +1,5 @@
 services:
-  consumer:
+  dispathcer:
     build:
       context: .
       dockerfile: ./consumer-dockerfile
@@ -8,15 +8,14 @@ services:
     depends_on:
       rbmq:
         condition: service_healthy
-    command: ["./myapp", "*.orange.*"]
+    command: ["./myapp"]
     environment:
       AMQP_URL: amqp://app_user_1:app_pass_1@rbmq:5672/
     deploy:
       mode: replicated
-      replicas: 5
 
 
-  producer:
+  vendor:
     build: 
       context: .
       dockerfile: ./producer-dockerfile
@@ -27,7 +26,7 @@ services:
         condition: service_healthy
     ports:
       - 8080:8080
-    command: ["./myapp", "fast.orange.fish"]
+    command: ["./myapp"]
     environment:
       AMQP_URL: amqp://app_user_1:app_pass_1@rbmq:5672/
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"rabbitmq/models"
 	"rabbitmq/utils"
 	"time"
@@ -17,7 +18,8 @@ func ConsumeDeliveryMessages(ch *amqp.Channel, q *amqp.Queue, db *ShipmentDB) {
 		Latitude:  latitude,
 	}
 	warehouse := models.NewWarehouse(location)
-	bindInfoTypeQueues(ch, q, utils.STATUS_LISTED)
+	err := utils.BindInfoTypeQueues(ch, q, keyStatus(utils.STATUS_BUY_REQUEST))
+	utils.FailOnError(err, "unable to bind queue")
 
 	forever := make(chan int)
 
@@ -31,6 +33,7 @@ func ConsumeDeliveryMessages(ch *amqp.Channel, q *amqp.Queue, db *ShipmentDB) {
 	)
 	utils.FailOnError(err, "unable to consume message")
 
+	log.Println("waiting to consume delivery messages")
 	for msg := range msgs {
 		go processDelivery(ch, &msg, *warehouse, db)
 	}
@@ -38,39 +41,52 @@ func ConsumeDeliveryMessages(ch *amqp.Channel, q *amqp.Queue, db *ShipmentDB) {
 }
 
 func processDelivery(ch *amqp.Channel, msg *amqp.Delivery, warehouse models.Warehouse, db *ShipmentDB) {
-	var shipment models.Shipment
-	json.Unmarshal(msg.Body, &shipment)
-	estimateTime := warehouse.EstimateTimeToDestination(shipment.Location)
+	var order models.Order
+	err := json.Unmarshal(msg.Body, &order)
+	utils.FailOnError(err, "unable to unmarshal order json")
+	estimateTime := warehouse.EstimateTimeToDestination(order.Location)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	ch.PublishWithContext(ctx,
+	inv := db.ConsumeInventoryByID(ctx, int64(order.InventoryID))
+	if inv == nil {
+		log.Println("unable to get inventory")
+		return
+	}
+
+	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	err = ch.PublishWithContext(ctx,
 		utils.EXCHANGE_NAME,
-		getTopicRoutingKey(utils.STATUS_BUY_ACCEPTED),
+		keyStatus(utils.STATUS_BUY_ACCEPTED),
 		false,
 		false,
 		amqp.Publishing{
 			ContentType: "text/plain",
-			Body:        []byte(fmt.Sprintf("reaching destination in about %.2f seconds", estimateTime)),
+			Body:        fmt.Appendf(nil, "buy accepted: reaching destination in about %.f seconds", estimateTime.Seconds()),
 		},
 	)
+	utils.FailOnError(err, "unable to publish message")
 
 	// reaching destination
 	time.Sleep(estimateTime)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	ch.PublishWithContext(ctx,
+	invByte, err := json.Marshal(inv)
+	utils.FailOnError(err, "unable to to marshal inventory")
+	err = ch.PublishWithContext(ctx,
 
 		utils.EXCHANGE_NAME,
-		getTopicRoutingKey(utils.STATUS_ARRIVED_PICKUP),
+		keyStatus(utils.STATUS_DELIVERED),
 		false,
 		false,
 		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        []byte("destination reached"),
+			ContentType: "application/json",
+			Body:        invByte,
 		},
 	)
+	utils.FailOnError(err, "unable to publish message")
 
 	// going back to the warehouse
 	time.Sleep(estimateTime)

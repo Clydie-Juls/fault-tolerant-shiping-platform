@@ -9,7 +9,9 @@ import (
 func GetEnvInt(key string, fallback int) int {
 	val := GetEnvString(key, "")
 	intVal, err := strconv.Atoi(val)
-	FailOnError(err, "unable to parse string into int")
+	if err != nil {
+		return fallback
+	}
 
 	return intVal
 }
@@ -17,7 +19,9 @@ func GetEnvInt(key string, fallback int) int {
 func GetEnvFloat(key string, fallback float64) float64 {
 	val := GetEnvString(key, "")
 	floatVal, err := strconv.ParseFloat(strings.TrimSpace(val), 64)
-	FailOnError(err, "unable to parse string into int")
+	if err != nil {
+		return fallback
+	}
 
 	return floatVal
 }

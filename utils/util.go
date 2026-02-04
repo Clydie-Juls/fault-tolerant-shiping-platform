@@ -1,6 +1,9 @@
 package utils
 
 import (
+	"context"
+	"database/sql"
+	"fmt"
 	"log"
 	"strings"
 
@@ -8,12 +11,13 @@ import (
 )
 
 const FALLBACK_AMQP_URL = "amqp://guest:guest@127.0.0.1:5672/"
+
 const (
 	EXCHANGE_NAME         = "inventory"
 	STATUS_LISTED         = "listed"
+	STATUS_BUY_REQUEST    = "buy_request"
 	STATUS_ACCEPTED       = "accepted"
 	STATUS_ARRIVED_PICKUP = "arrived_pickup"
-	STATUS_BUY_REQUEST    = "buy_request"
 	STATUS_BUY_ACCEPTED   = "buy_accepted"
 	STATUS_DELIVERED      = "delivered"
 )
@@ -86,4 +90,39 @@ func BodyFrom(args []string) string {
 	}
 
 	return s
+}
+
+func GetTopicRoutingKey(warehouseState, warehouseCity, status string) string {
+	return fmt.Sprintf("%s.%s.%s", warehouseState, warehouseCity, status)
+}
+
+func BindInfoTypeQueues(ch *amqp.Channel, q *amqp.Queue, key string) error {
+	return ch.QueueBind(
+		q.Name,
+		key,
+		EXCHANGE_NAME,
+		false,
+		nil,
+	)
+}
+
+func GetOrCreateWarehouseID(
+	ctx context.Context,
+	db *sql.DB,
+	state string,
+	city string,
+) int {
+	const query = `
+		INSERT INTO warehouse (warehouse_state, warehouse_city)
+		VALUES ($1, $2)
+		ON CONFLICT (warehouse_state, warehouse_city)
+		DO UPDATE SET warehouse_city = EXCLUDED.warehouse_city
+		RETURNING id;
+	`
+
+	var warehouseID int
+	err := db.QueryRowContext(ctx, query, state, city).Scan(&warehouseID)
+	FailOnError(err, "unable to create or get warehouse id")
+
+	return warehouseID
 }

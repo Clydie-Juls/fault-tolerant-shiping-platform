@@ -19,7 +19,7 @@ func NewDbConn() *DBConn {
 	hostName := utils.GetEnvString("PSQL_HOSTNAME", "127.0.0.1")
 	port := utils.GetEnvString("PSQL_HOSTPORT", "5432")
 
-	connstr := fmt.Sprintf("user=%s dbname=%s password=%s host=%s port=%s",
+	connstr := fmt.Sprintf("user=%s dbname=%s password=%s host=%s port=%s sslmode=disable",
 		user,
 		dbName,
 		password,
