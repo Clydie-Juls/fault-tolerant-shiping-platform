@@ -1,0 +1,27 @@
+# https://kubernetes.io/docs/concepts/configuration/configmap/
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: producer-config
+data:
+  # Warehouse Configuration
+  WAREHOUSE_STATE: "colorado"
+  WAREHOUSE_CITY: "denver"
+  WAREHOUSE_LONGITUDE: "-40.0076"
+  WAREHOUSE_LATITUDE: "-105.2659"
+
+  # DB Configuration 
+  PSQL_USER: "user123"
+  PSQL_DBNAME: "inventorydb"
+  PSQL_HOSTNAME: "psql"
+  PSQL_HOSTPORT: "5432"
+
+  # Server Configuration
+  CONSUMER_ADDR: ":8080"
+
+  # RabbitMQ Configuration
+  AMQP_USER: "app_user_1"
+  AMQP_HOST: "rbmq"
+  AMQP_PORT: "5672"
+---
+

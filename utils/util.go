@@ -10,7 +10,19 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-const FALLBACK_AMQP_URL = "amqp://guest:guest@127.0.0.1:5672/"
+var (
+	AMQP_DEFAULT_USER = GetEnvString("AMQP_USER", "guest")
+	AMQP_HOST         = GetEnvString("AMQP_HOST", "127.0.0.1")
+	AMQP_PORT         = GetEnvString("AMQP_PORT", "5672")
+	RABBITMQ_SECRET   = ReadSecret("/run/secrets/rabbitmq_pass")
+	AMQP_DEFAULT_PASS = GetSecretString(RABBITMQ_SECRET, "AMQP_PASS", "guest")
+	AMQP_URL          = fmt.Sprintf("amqp://%s:%s@%s:%s",
+		AMQP_DEFAULT_USER,
+		AMQP_DEFAULT_PASS,
+		AMQP_HOST,
+		AMQP_PORT,
+	)
+)
 
 const (
 	EXCHANGE_NAME         = "inventory"
@@ -29,8 +41,7 @@ func FailOnError(err error, msg string) {
 }
 
 func CreateAMQPServer() (*amqp.Connection, error) {
-	url := GetEnvString("AMQP_URL", FALLBACK_AMQP_URL)
-	conn, err := amqp.Dial(url)
+	conn, err := amqp.Dial(AMQP_URL)
 	return conn, err
 }
 

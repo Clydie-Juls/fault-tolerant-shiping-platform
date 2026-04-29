@@ -4,7 +4,9 @@ COPY go.mod go.sum .
 RUN go mod download
 COPY consumer ./consumer
 COPY utils ./utils
-RUN go build -ldflags="-s -w" -o myapp ./consumer/direct_consume_log.go
+COPY models ./models
+COPY internal ./internal
+RUN go build -ldflags="-s -w" -o myapp ./consumer/*.go
 
 FROM alpine
 RUN apk update --no-cache && apk add --no-cache ca-certificates tzdata

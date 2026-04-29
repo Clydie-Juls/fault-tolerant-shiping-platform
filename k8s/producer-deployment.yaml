@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: producer
+  labels:
+    app: producer
+spec:
+  selector:
+    matchLabels:
+      app: producer
+  replicas: 1
+  template:
+    metadata:
+      app: producer
+    spec:
+      volumes:
+        - name: db-secret-volume
+          secret:
+            secretName: db-secret
+        - name: amqp-secret-volume
+          secret:
+            secretName: amqp-secret
+      containers:
+        - name: producer
+          image: /vendor
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256mi
+            limits:
+              cpu: 500m
+              memory: 512mi
+          envFrom:
+            configMapRef:
+              name: producer-config
+          volumeMounts:
+          - name: db-secret-volume
+            readOnly: true
+            mountPath: "/run/secrets/sql_pass"
+          - name: amqp-secret
+            readOnly: true
+            mountPath: "/run/secrets/rabbitmq_pass"
+
+# https://kubernetes.io/docs/concepts/services-networking/service/
+apiVersion: v1
+kind: Service
+metadata:
+  name: producer-service
+spec:
+  selector:
+    app: producer
+  type: LoadBalancer
+  ports:
+  - name: producer-service
+    port: 8080
+    targetPort: 8080
+---
+

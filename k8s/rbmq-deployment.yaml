@@ -1,0 +1,60 @@
+# https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rbmq
+  labels:
+    app: rbmq
+spec:
+  selector:
+    matchLabels:
+      app: rbmq
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: rbmq
+    spec:
+      containers:
+      - name: rbmq
+        image: rabbitmq:4.2-management-alpine
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 512m
+            memory: 512Mi
+        livenessProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "check_running"]
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+        readinessProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "check_running"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+        envFrom:
+          - secretRef:
+              name: rbmq-secret
+---
+# https://kubernetes.io/docs/concepts/services-networking/service/
+apiVersion: v1
+kind: Service
+metadata:
+  name: rmbq-service
+spec:
+  selector:
+    app: rbmq
+  type: ClusterIP
+  ports:
+  - name: rbmq-service
+    protocol: TCP 
+    port: 5672
+    targetPort: 5672
+---
+
+

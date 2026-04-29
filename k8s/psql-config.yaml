@@ -1,0 +1,11 @@
+# https://kubernetes.io/docs/concepts/configuration/configmap/
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: psql-config
+data:
+  POSTGRES_USER: user123
+  POSTGRES_DB: inventorydb
+  POSTGRES_PASSWORD_FILE: /run/secrets/sql_pass/PSQL_PASS
+---
+

@@ -2,3 +2,7 @@ rabbitmq.conf
 rabbitmq_pass.txt
 rabbitmq_user.txt
 .env.*
+secrets/
+*.secrets.yaml
+.env*
+*_pass

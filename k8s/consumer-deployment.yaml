@@ -1,0 +1,46 @@
+# https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consumer
+  labels:
+    app: consumer
+spec:
+  selector:
+    matchLabels:
+      app: consumer
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: consumer
+    spec:
+      volumes:
+        - name: db-secret-volume
+          secret:
+            secretName: db-secret
+        - name: amqp-secret-volume
+          secret:
+            secretName: amqp-secret
+      containers:
+      - name: consumer
+        image: consumer:1.0
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        envFrom:
+            - configMapRef:
+                name: consumer-config
+        volumeMounts:
+          - name: db-secret-volume
+            readOnly: true
+            mountPath: "/run/secrets/sql_pass"
+          - name: amqp-secret-volume
+            readOnly: true
+            mountPath: "/run/secrets/rabbitmq_pass"
+

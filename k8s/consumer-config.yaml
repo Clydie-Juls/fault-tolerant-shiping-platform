@@ -1,0 +1,31 @@
+# https://kubernetes.io/docs/concepts/configuration/configmap/
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: consumer-config
+  namespace: 
+data:
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: consumer-config
+data:
+  # Warehouse Configuration
+  WAREHOUSE_STATE: "colorado"
+  WAREHOUSE_CITY: "denver"
+  WAREHOUSE_LATITUDE: "-40.0076"
+  WAREHOUSE_LONGITUDE: "-105.2659"
+  WAREHOUSE_CARS: "10"
+
+  # DB Configuration
+  PSQL_USER: "user123"
+  PSQL_DBNAME: "inventorydb"
+  PSQL_HOSTNAME: "psql"
+  PSQL_HOSTPORT: "5432"
+
+  # RabbitMQ Configuration
+  AMQP_USER: "app_user_1"
+  AMQP_HOST: "rbmq"
+  AMQP_PORT: "5672"
+
+

@@ -14,7 +14,11 @@ type DBConn struct {
 
 func NewDbConn() *DBConn {
 	user := utils.GetEnvString("PSQL_USER", "user123")
-	password := utils.GetEnvString("PSQL_PASS", "pass123")
+	password := utils.GetSecretString(
+		utils.ReadSecret("/run/secrets/sql_pass"),
+		"PSQL_PASS",
+		"pass123",
+	)
 	dbName := utils.GetEnvString("PSQL_DBNAME", "inventorydb")
 	hostName := utils.GetEnvString("PSQL_HOSTNAME", "127.0.0.1")
 	port := utils.GetEnvString("PSQL_HOSTPORT", "5432")
